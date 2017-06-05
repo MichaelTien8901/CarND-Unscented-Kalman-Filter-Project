@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include "tools.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -67,6 +68,11 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///* the current NIS for radar
+  double NIS_radar_;
+
+  ///* the current NIS for laser
+  double NIS_laser_;
 
   /**
    * Constructor
@@ -102,6 +108,19 @@ public:
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+  // initialization constant
+  const float INIT_BIKE_VELOCITY = 0;
+  const float INIT_BIKE_YAW = 0;
+  const float INIT_BIKE_YAW_D = 0;
+
+private:
+
+  void AugmentedSigmaPoints(MatrixXd* Xsig_out);
+  void SigmaPointPrediction(MatrixXd& Xsig_aug, double delta_t, MatrixXd* Xsig_out );
+  void PredictMeanAndCovariance(VectorXd* x_out, MatrixXd* P_out);
+  void CreateWeights(VectorXd& weights);
+  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zsig_out);
+  void PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zsig_out);
 };
 
 #endif /* UKF_H */
