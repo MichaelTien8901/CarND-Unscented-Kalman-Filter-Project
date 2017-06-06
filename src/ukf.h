@@ -109,7 +109,7 @@ public:
    */
   void UpdateRadar(MeasurementPackage meas_package);
   // initialization constant
-  const float INIT_BIKE_VELOCITY = 0;
+  const float INIT_BIKE_VELOCITY = 10;
   const float INIT_BIKE_YAW = 0;
   const float INIT_BIKE_YAW_D = 0;
 
