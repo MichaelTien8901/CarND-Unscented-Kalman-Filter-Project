@@ -10,6 +10,8 @@
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+//#define Uses_LIDAR_SIGMA_UPDATE
+#define Uses_LIDAR_LINEAR_UPDATE
 
 class UKF {
 public:
@@ -74,6 +76,10 @@ public:
   ///* the current NIS for laser
   double NIS_laser_;
 
+#ifdef   Uses_LIDAR_LINEAR_UPDATE
+  MatrixXd H_laser_;
+  MatrixXd R_laser_;
+#endif
   /**
    * Constructor
    */
@@ -120,7 +126,9 @@ private:
   void PredictMeanAndCovariance(VectorXd* x_out, MatrixXd* P_out);
   void CreateWeights(VectorXd& weights);
   void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zsig_out);
+#ifdef Uses_LIDAR_SIGMA_UPDATE
   void PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zsig_out);
+#endif
 };
 
 #endif /* UKF_H */

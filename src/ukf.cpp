@@ -63,9 +63,11 @@ UKF::UKF() {
 	  0, 0, 1, 0, 0,
 	  0, 0, 0, 1, 0,
 	  0, 0, 0, 0, 1;
+#define Uses_TUNE_P
+#ifdef Uses_TUNE_P
   P_(0, 0) = std_laspx_ * std_laspx_;
   P_(1, 1) = std_laspy_ * std_laspy_;
-
+#endif
   //set weights
   weights_ = VectorXd(2 * n_aug_ + 1);
   weights_(0) = lambda_ / (n_aug_ + lambda_);
@@ -73,6 +75,16 @@ UKF::UKF() {
 	  weights_(i) = 0.5 / (lambda_ + n_aug_);
   }
   is_initialized_ = false;
+#ifdef   Uses_LIDAR_LINEAR_UPDATE
+  H_laser_ = MatrixXd(2, 5); // 2, 5 = n_x_
+  H_laser_ << 1, 0, 0, 0, 0,
+	          0, 1, 0, 0, 0;
+  R_laser_ = MatrixXd(2, 2);
+  R_laser_ << std_laspx_ * std_laspx_, 0,
+	  0, std_laspy_ * std_laspy_; 
+
+#endif
+
 }
 
 UKF::~UKF() {}
@@ -167,6 +179,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the lidar NIS.
   */
+#ifdef Uses_LIDAR_SIGMA_UPDATE
 	int n_z = 2;
 	VectorXd z_pred = VectorXd(n_z);
 	MatrixXd S = MatrixXd(n_z, n_z);
@@ -201,6 +214,27 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 	x_ = x_ + K * z_diff;
 	P_ = P_ - K*S*K.transpose();
 	NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
+#endif
+#ifdef Uses_LIDAR_LINEAR_UPDATE
+	VectorXd z = VectorXd(2);
+	z << meas_package.raw_measurements_[0],
+		meas_package.raw_measurements_[1];
+
+	VectorXd z_pred = H_laser_ * x_;
+	VectorXd y = z - z_pred;
+	MatrixXd Ht = H_laser_.transpose();
+	MatrixXd S = H_laser_ * P_ * Ht + R_laser_;
+	MatrixXd Si = S.inverse();
+	MatrixXd PHt = P_ * Ht;
+	MatrixXd K = PHt * Si;
+
+	//new estimate
+	x_ = x_ + (K * y);
+	long x_size = x_.size();
+	MatrixXd I = MatrixXd::Identity(x_size, x_size);
+	P_ = (I - K * H_laser_) * P_;
+	NIS_laser_ = y.transpose() * S.inverse() * y;
+#endif
 }
 
 /**
@@ -398,7 +432,9 @@ void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zs
 	*Zsig_out = Zsig;
 
 }
+#ifdef Uses_LIDAR_SIGMA_UPDATE
 void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zsig_out) {
+
 	//create matrix for sigma points in measurement space
 	int n_z = 2;
 	MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
@@ -439,3 +475,4 @@ void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zs
 	*S_out = S;
 	*Zsig_out = Zsig;
 }
+#endif
