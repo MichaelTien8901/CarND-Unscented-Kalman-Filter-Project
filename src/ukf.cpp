@@ -397,10 +397,15 @@ void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd *Zs
 		double yaw = Xsig_pred_(3, i);
 		double yawd = Xsig_pred_(4, i);
 		double rho = sqrt(px*px + py*py);
-		double phi = atan2(py, px);
+		double phi;
 		double rho1 = rho;
-		if (rho1 < epsilon)
+		if (rho1 < epsilon) {
 			rho1 = epsilon;
+			phi = 0; // atan2(0,0) not defined 
+		}
+		else {
+			phi = atan2(py, px);
+		}
 		double rhod = (px * cos(yaw)*v + py * sin(yaw) * v) / rho1;
 		Zsig(0, i) = rho;
 		Zsig(1, i) = phi;
